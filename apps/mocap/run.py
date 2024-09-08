@@ -7,6 +7,7 @@ import typing
 
 if typing.TYPE_CHECKING:
     from myeasymocap.stages.basestage import MultiStage
+    from myeasymocap.datasets.sv1p import SVDataset
 
 def process(dataset, model, args):
     ret_all = []
@@ -18,12 +19,12 @@ def process(dataset, model, args):
             ret_all.append(ret)
     else:
         import torch
-        dataloader = torch.utils.data.DataLoader(dataset, 
-            batch_size=1, num_workers=args.num_workers, shuffle=False, collate_fn=lambda x:x, drop_last=False)
+        dataloader = torch.utils.data.DataLoader(
+            dataset, batch_size=1, num_workers=args.num_workers, shuffle=False, collate_fn=lambda x:x, drop_last=False,
+        )
         index = 0
         for data in tqdm(dataloader, desc='[Run]'):
-            data = data[0]
-            ret = model.at_step(data, index)
+            ret = model.at_step(data[0], index)
             if not args.skip_final:
                 ret_all.append(ret)
             index += 1
@@ -92,7 +93,7 @@ def main_entrypoint():
     parser.add_argument('--ranges', type=int, default=None, nargs=3)
     parser.add_argument('--cameras', type=str, default=None, help='Camera file path')
     parser.add_argument('--out', type=str, default=None)
-    parser.add_argument('--num_workers', type=int, default=-1)
+    parser.add_argument('--num_workers', type=int, default=-1, help="Number of worker for dataloader to multiprocess.")
     parser.add_argument('--skip_vis', action='store_true')
     parser.add_argument('--skip_vis_step', action='store_true')
     parser.add_argument('--skip_vis_final', action='store_true')
@@ -112,7 +113,7 @@ def main_entrypoint():
     print(cfg_data, file=open(os.path.join(out, 'cfg_data.yml'), 'w'))
     print(cfg_exp, file=open(os.path.join(out, 'cfg_exp.yml'), 'w'))
     
-    dataset = load_object(cfg_data.module, cfg_data.args)
+    dataset: SVDataset = load_object(cfg_data.module, cfg_data.args)
     print(dataset)
 
     model: MultiStage = load_object(cfg_exp.module, cfg_exp.args)
