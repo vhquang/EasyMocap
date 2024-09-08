@@ -37,7 +37,7 @@ class MultiStage:
             at_finals[key] = model
         self.model_finals = at_finals
 
-    def __init__(self, output, at_step, at_final, keys_keep=[], timer=True) -> None:
+    def __init__(self, output, at_step, at_final, keys_keep=[], timer=False) -> None:
         log('[{}] writing the results to {}'.format(self.__class__.__name__, output))
         at_steps = {}
         for key, val in at_step.items():
@@ -55,7 +55,7 @@ class MultiStage:
         self.keys_keep = keys_keep
         self.timer = Timer(at_steps, verbose=timer)
 
-    def at_step(self, data, index):
+    def at_step(self, data, index) -> dict:
         ret = {}
         if 'meta' in data:
             ret['meta'] = data['meta']
