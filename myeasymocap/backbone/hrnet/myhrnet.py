@@ -65,7 +65,7 @@ class MyHRNet(BaseTopDownModelCache):
             os.makedirs(os.path.dirname(ckpt), exist_ok=True)
             cmd = 'gdown "{}" -O {}'.format(url, ckpt)
             print('\n', cmd, '\n')
-            os.system(cmd)
+            # os.system(cmd)
         assert os.path.exists(ckpt), f'{ckpt} not exists'
         checkpoint = torch.load(ckpt, map_location='cpu')
         model.load_state_dict(checkpoint)

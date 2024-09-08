@@ -3,6 +3,11 @@ import os
 from easymocap.config import Config, load_object
 from tqdm import tqdm
 
+import typing
+
+if typing.TYPE_CHECKING:
+    from myeasymocap.stages.basestage import MultiStage
+
 def process(dataset, model, args):
     ret_all = []
     print('[Run] dataset has {} samples'.format(len(dataset)))
@@ -110,7 +115,7 @@ def main_entrypoint():
     dataset = load_object(cfg_data.module, cfg_data.args)
     print(dataset)
 
-    model = load_object(cfg_exp.module, cfg_exp.args)
+    model: MultiStage = load_object(cfg_exp.module, cfg_exp.args)
     process(dataset, model, args)
 
 if __name__ == '__main__':
