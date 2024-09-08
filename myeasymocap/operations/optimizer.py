@@ -21,8 +21,10 @@ def dict_of_tensor_to_numpy(body_params):
             params_[key] = val.cpu().numpy()
     return params_
 
-def make_optimizer(opt_params, optim_type='lbfgs', max_iter=20,
-    lr=1e-3, betas=(0.9, 0.999), weight_decay=0.0, **kwargs):
+def make_optimizer(
+    opt_params, optim_type='lbfgs', max_iter=20,
+    lr=1e-3, betas=(0.9, 0.999), weight_decay=0.0, **kwargs,
+):
     if isinstance(opt_params, dict):
         # LBFGS 不支持参数字典
         opt_params = list(opt_params.values())
@@ -41,6 +43,7 @@ def make_optimizer(opt_params, optim_type='lbfgs', max_iter=20,
         optimizer = torch.optim.Adam(opt_params, lr=lr, betas=betas, weight_decay=weight_decay)
     else:
         raise NotImplementedError
+
     return optimizer
 
 def grad_require(params, flag=False):
@@ -128,7 +131,7 @@ class Optimizer:
         self.log_loss(iter_, closure, True)
         return True
 
-    def __call__(self, params, model, **infos):
+    def __call__(self, params, model, **infos) -> dict:
         """
             待优化变量一定要在params中，但params中不一定会被优化
             infos中的变量不一定会被优化
@@ -144,6 +147,7 @@ class Optimizer:
             optimize_keys = optimize_keys[self.iter]
         log('[{}] Optimize {}'.format(self.__class__.__name__, optimize_keys))
         log('[{}] Loading {}'.format(self.__class__.__name__, self.used_infos))
+        
         opt_params = {}
         for key in optimize_keys:
             if key in infos.keys(): # 优化的参数
@@ -154,18 +158,24 @@ class Optimizer:
                 raise ValueError('{} is not in infos or body_params'.format(key))
         for key, val in opt_params.items():
             infos_used['init_'+key] = val.clone()
+        
         optimizer = make_optimizer(opt_params, **self.optimizer_args)
+        print(f'Optimizer type: {type(optimizer)}')
         closure = make_closure(optimizer, model, params, infos_used, self.loss, device)
         # 准备开始优化
         grad_require(opt_params, True)
+        # This is the most expensive process.
         self.optimizer_step(optimizer, closure)
         grad_require(opt_params, False)
+
         # 直接返回
         ret = {
             'params': params
         }
-        for key in optimize_keys:
-            if key in infos.keys():
-                ret[key] = opt_params[key]
+        for key in (x for x in optimize_keys if x in infos.keys()):
+            # if key in infos.keys():
+            #     ret[key] = opt_params[key]
+            ret[key] = opt_params[key]
+        
         ret = dict_of_tensor_to_numpy(ret)
         return ret

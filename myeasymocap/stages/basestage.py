@@ -5,6 +5,11 @@ import numpy as np
 import time
 from tabulate import tabulate
 
+import typing
+
+if typing.TYPE_CHECKING:
+    from myeasymocap.operations.optimizer import Optimizer
+
 class Timer:
     def __init__(self, record, verbose) -> None:
         self.keys = list(record.keys())
@@ -101,20 +106,38 @@ class MultiStage:
                 data[key] = MultiStage.merge_data(data[key])
         return data
 
-    def at_final(self, infos_all):
+    def at_final(self, infos_all) -> dict:
         self.load_final()
         data = self.merge_data(infos_all)
         log('Keep keys: {}'.format(list(data.keys())))
         ret = {}
+        """
+        load_body_model <myeasymocap.io.model.SMPLLoader object at 0x7d4c3ffa67d0>
+        init_translation <myeasymocap.operations.init.InitTranslation object at 0x7d4b127b5060>
+        smooth <myeasymocap.operations.smooth.SmoothPoses object at 0x7d4b127b4490>
+        mean_param <myeasymocap.operations.init.MeanShapes object at 0x7d4b127a3f10>
+        init_RT <myeasymocap.operations.optimizer.Optimizer object at 0x7d4b127a0310>
+        refine_poses <myeasymocap.operations.optimizer.Optimizer object at 0x7d4b127a0610>
+        write <myeasymocap.io.write.WriteSMPL object at 0x7d4b127a0460>
+        render <myeasymocap.io.vis3d.Render object at 0x7d4b127a0f10>
+        make_video <myeasymocap.io.video.MakeVideo object at 0x7d4b127a13f0>
+        """
         for key, model in self.model_finals.items():
             if self._at_final[key].get('skip', False):
                 continue
-            for iter_ in range(self._at_final[key].get('repeat', 1)):
+            at_final = self._at_final[key]
+            iter_num = at_final.get('repeat', 1)
+            # TODO: check if model mutates the data.
+            # key_from_data = at_final.get('key_from_data', [])
+            # key_from_previous = at_final.get('key_from_previous', [])
+
+            start = time.time()
+            for iter_ in range(iter_num):
                 inputs = {}
                 model.iter = iter_
-                for k in self._at_final[key].get('key_from_data', []):
+                for k in at_final.get('key_from_data', []):
                     inputs[k] = data[k]
-                for k in self._at_final[key].get('key_from_previous', []):
+                for k in at_final.get('key_from_previous', []):
                     inputs[k] = ret[k]
                 try:
                     output = model(**inputs)
@@ -123,6 +146,9 @@ class MultiStage:
                     raise Exception
                 if output is not None:
                     ret.update(output)
+            duration = time.time() - start
+            print(f'{model.__class__.__name__} runs {iter_num} iter in {duration:.3f}s \n')
+        
         return ret
 
 
