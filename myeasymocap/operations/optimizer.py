@@ -29,16 +29,18 @@ def make_optimizer(
         # LBFGS 不支持参数字典
         opt_params = list(opt_params.values())
     if optim_type == 'lbfgs':
-        # optimizer = torch.optim.LBFGS(
-        #     opt_params, max_iter=max_iter, lr=lr, line_search_fn='strong_wolfe',
-        #     tolerance_grad= 0.0000001, # float32的有效位数是7位
-        #     tolerance_change=0.0000001,
-        # )
-        from easymocap.pyfitting.lbfgs import LBFGS
-        optimizer = LBFGS(opt_params, line_search_fn='strong_wolfe', max_iter=max_iter,
-                          tolerance_grad= 0.0000001, # float32的有效位数是7位
-                            tolerance_change=0.0000001,
-                          **kwargs)
+        if torch.cuda.is_available():
+            optimizer = torch.optim.LBFGS(
+                opt_params, max_iter=max_iter, lr=lr, line_search_fn='strong_wolfe',
+                tolerance_grad= 0.0000001, # float32的有效位数是7位
+                tolerance_change=0.0000001,
+            )
+        else:
+            from easymocap.pyfitting.lbfgs import LBFGS
+            optimizer = LBFGS(opt_params, line_search_fn='strong_wolfe', max_iter=max_iter,
+                            tolerance_grad= 0.0000001, # float32的有效位数是7位
+                                tolerance_change=0.0000001,
+                            **kwargs)
     elif optim_type == 'adam':
         optimizer = torch.optim.Adam(opt_params, lr=lr, betas=betas, weight_decay=weight_decay)
     else:
