@@ -88,7 +88,7 @@ def main_entrypoint():
         parser.add_argument('--{}'.format(name), type=str, required=False)
         parser.add_argument('--opt_{}'.format(name), type=str, nargs='+', default=[])
     parser.add_argument('--root', type=str, default=None)
-    parser.add_argument('--subs', type=str, default=None, nargs='+')
+    parser.add_argument('--subs', type=str, default=None, nargs='+', help='The video subject to process.')
     parser.add_argument('--subs_vis', type=str, default=None, nargs='+')
     parser.add_argument('--ranges', type=int, default=None, nargs=3)
     parser.add_argument('--cameras', type=str, default=None, help='Camera file path')
